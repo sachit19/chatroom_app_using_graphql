@@ -1,8 +1,9 @@
 import graphene
 from graphene_django import DjangoObjectType
+from pkg_resources import require
 from .models import Chatroom, Message, Member
 
-# Graphene objecttypes
+# Objecttypes
 class ChatroomType(DjangoObjectType):
     class Meta: 
         model = Chatroom
@@ -18,7 +19,7 @@ class MessageType(DjangoObjectType):
         model = Message
         fields = ('id','msg','member','chatroom','created_at')
 
-# Graphene query class
+# Query class
 class Query(graphene.ObjectType):
     chatrooms = graphene.List(ChatroomType)
     members = graphene.List(MemberType)
@@ -36,5 +37,41 @@ class Query(graphene.ObjectType):
         # Querying a list
         return Message.objects.all()
 
+# InputObjectTypes
+class ChatroomInput(graphene.InputObjectType):
+    cname = graphene.String()
 
-schema = graphene.Schema(query=Query)
+class MemberInput(graphene.InputObjectType):
+    mname = graphene.String()
+
+# Mutation class
+class CreateChatroom(graphene.Mutation):
+    class Arguments:
+        input=ChatroomInput(required=True)
+    
+    chatroom=graphene.Field(ChatroomType)
+    
+    def mutate(root, info, input):
+        cr = Chatroom()
+        cr.cname=input.cname
+        cr.save()
+        return CreateChatroom(chatroom=cr)
+
+class CreateMember(graphene.Mutation):
+    class Arguments:
+        input=MemberInput(required=True)
+    
+    member=graphene.Field(MemberType)
+    
+    def mutate(root, info, input):
+        m = Member()
+        m.mname=input.mname
+        m.save()
+        return CreateMember(member=m)
+
+class Mutation(graphene.ObjectType):
+    create_chatroom=CreateChatroom.Field()
+    create_member=CreateMember.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
