@@ -26,15 +26,12 @@ class Query(graphene.ObjectType):
     messages = graphene.List(MessageType)
 
     def resolve_members(root, info, **kwargs):
-        # Querying a list
         return Member.objects.all()
 
     def resolve_chatrooms(root, info, **kwargs):
-        # Querying a list
         return Chatroom.objects.all()
 
     def resolve_messages(root, info, **kwargs):
-        # Querying a list
         return Message.objects.all()
 
 # InputObjectTypes
@@ -43,6 +40,11 @@ class ChatroomInput(graphene.InputObjectType):
 
 class MemberInput(graphene.InputObjectType):
     mname = graphene.String()
+
+class MessageInput(graphene.InputObjectType):
+    msg=graphene.String()
+    member=graphene.String()
+    chatroom=graphene.String()
 
 # Mutation class
 class CreateChatroom(graphene.Mutation):
@@ -69,9 +71,24 @@ class CreateMember(graphene.Mutation):
         m.save()
         return CreateMember(member=m)
 
+class CreateMessage(graphene.Mutation):
+    class Arguments:
+        input=MessageInput(required=True)
+    
+    message=graphene.Field(MessageType)
+    
+    def mutate(root, info, input):
+        message = Message()
+        message.msg=input.msg
+        message.chatroom=Chatroom.objects.get(cname=input.chatroom)
+        message.member=Member.objects.get(mname=input.member)
+        message.save()
+        return CreateMessage(message=message)
+
 class Mutation(graphene.ObjectType):
     create_chatroom=CreateChatroom.Field()
     create_member=CreateMember.Field()
+    create_message=CreateMessage.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
