@@ -24,6 +24,7 @@ class Query(graphene.ObjectType):
     chatrooms = graphene.List(ChatroomType)
     members = graphene.List(MemberType)
     messages = graphene.List(MessageType)
+    messages_by_chatroom=graphene.List(MessageType, chatroom = graphene.String(required=True))
 
     def resolve_members(root, info, **kwargs):
         return Member.objects.all()
@@ -33,6 +34,10 @@ class Query(graphene.ObjectType):
 
     def resolve_messages(root, info, **kwargs):
         return Message.objects.all()
+    
+    def resolve_messages_by_chatroom(root, info, chatroom):
+        cr=Chatroom.objects.get(cname=chatroom)
+        return Message.objects.filter(chatroom=cr).all()
 
 # InputObjectTypes
 class ChatroomInput(graphene.InputObjectType):
